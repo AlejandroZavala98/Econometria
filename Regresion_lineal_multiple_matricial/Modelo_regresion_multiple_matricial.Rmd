@@ -1,0 +1,178 @@
+---
+title: "Modelo de regresión multiple matricial"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+\newpage
+
+# Modelo en forma matricial
+
+Consideremos el siguiente modelo
+
+\begin {equation*}
+\begin{split}
+y_{i} = \beta_{1} + \beta_{2}x_{2i} + \beta_{3}x_{3i} + \epsilon_{i}
+\end{split}
+\end{equation*}
+
+
+Donde la variable endógena es el precio de los automóviles (miles de dólares), la primera variable exógena es la potencia en caballos de fuerza del automóvil y la segunda variable endógena es la longitud en metros del automóvil. 
+
+Los datos muéstrales son:
+```{r, echo=FALSE}
+library(knitr)
+y_p=c(15,20,15,15,20)
+x_2=c(90,100,80,70,100)
+x_3=c(3,3.2,3.2,3,4)
+
+data_auto <- data.frame("Y"=y_p,"X2"=x_2,"X3"=x_3)
+#data_auto
+kable(data_auto,format="markdown")
+```
+
+El modelo propuesto es: 
+
+\begin {equation*}
+\begin{split}
+\hat{\beta_{1}} + \hat{\beta_{2}} X_{2i} + \hat{\beta_{3}} X_{3i}= \hat{y_{i}}
+\end{split}
+\end{equation*}
+
+Y cuya forma matricial esta dada por: 
+
+\begin {equation*}
+X\beta=Y
+\end{equation*}
+Cuya representacion matricial es 
+
+\begin {equation*}
+\begin{bmatrix}
+1 & 90 & 3 \\
+1 & 100 & 3.2 \\
+1 & 80 & 3.2 \\
+1 & 70 & 3 \\
+1 & 100 & 4 \\
+\end{bmatrix}
+\begin{bmatrix}
+\beta_{1} \\
+\beta_{2} \\
+\beta_{3} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+15\\
+20\\
+15\\
+15\\
+20\\
+\end{bmatrix}
+\end{equation*}
+
+Donde:
+\begin{equation*}
+X=
+\begin{bmatrix}
+1 & 90 & 3 \\
+1 & 100 & 3.2 \\
+1 & 80 & 3.2 \\
+1 & 70 & 3 \\
+1 & 100 & 4 \\
+\end{bmatrix}
+\end{equation*}
+
+\begin{equation*}
+\beta=
+\begin{bmatrix}
+\beta_{1} \\
+\beta_{2} \\
+\beta_{3} \\
+\end{bmatrix}
+\end{equation*}
+
+\begin{equation*}
+Y=
+\begin{bmatrix}
+15\\
+20\\
+15\\
+15\\
+20\\
+\end{bmatrix}
+\end{equation*}
+
+\newpage
+
+Recordemos
+
+\begin{equation*}
+\hat{\beta} = (X^{t}X)^{-1}X^{t}Y
+\end{equation*}
+
+De esta forma
+
+La matriz $X$
+
+```{r, echo = FALSE}
+mat_X=matrix(c(rep(1,5),x_2,x_3),nrow=5)
+mat_X
+```
+
+
+La matriz $X^{t}$ es:
+```{r, echo = FALSE}
+mat_tX=t(mat_X)
+mat_tX
+```
+
+La matriz $X^{t}X$ es:
+```{r, echo = FALSE}
+mat_tX_X=mat_tX %*% mat_X
+mat_tX_X
+```
+
+La matriz $(X^{t}X)^{-1}$ es:
+```{r, echo = FALSE}
+mat_inversa=solve(mat_tX_X)
+mat_inversa
+```
+
+La matriz $(X^{t}X)^{-1}(X^{t})$ es:
+```{r, echo = FALSE}
+mat_inver_trans=mat_inversa %*% mat_tX
+mat_inver_trans
+```
+
+La matriz $(X^{t}X)^{-1}X^{t}Y$ que es el vector de minimos cuadrados ordinarios es:
+```{r, echo = FALSE}
+mat_mco=mat_inver_trans %*% y_p
+mat_mco
+```
+
+
+Finalmente el modelo queda como:
+
+\begin {equation*}
+\begin{split}
+y_{i} = -1.947368 + 0.136842 X_{2i} + 2.105263 X_{3i}
+\end{split}
+\end{equation*}
+
+\newpage
+
+# Comprobando
+
+El modelo por linea de comando es:
+```{r, echo=TRUE}
+mco_auto <- lm(Y ~ X2 + X3,data = data_auto)
+mco_auto
+```
