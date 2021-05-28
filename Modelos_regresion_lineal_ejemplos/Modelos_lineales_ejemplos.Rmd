@@ -1,0 +1,478 @@
+---
+title: "Modelo de regresión lineal simple"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+```{r, echo=FALSE}
+library(knitr)
+```
+
+\newpage
+
+# Informacion de contacto
+
+mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+\newpage
+
+# 1) Explicación de los distintos modelos
+
+## Modelo lineal
+
+El modelo lineal dado por: 
+\begin{equation*}
+y_{i} = \beta_{0} + \beta_{1} x_{i} + u_{i}
+\end{equation*}
+
+Cuya función ajustada es: 
+
+\begin{equation*}
+\hat{y} = \hat{\beta_{0}} + \hat{\beta_{1}} x_{i}
+\end{equation*}
+
+Dando valores arbitrarios a: 
+
+\begin{equation*}
+\hat{\beta_{0}} \ \ , \ \
+\hat{\beta_{1}}
+\end{equation*}
+
+Se obtienen distintas rectas
+
+\begin{equation*}
+\begin{split}
+\hat{\beta_{0}} &= \textrm{ordenada al origen} \\
+\hat{\beta_{1}} &= \textrm{pendiente }
+\end{split}
+\end{equation*}
+
+Veamos el modelo 
+
+\begin{equation*}
+\hat{y_{i}} =  2 + 4x_{i}
+\end{equation*}
+
+
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+modelo_lineal <- function(x,a,b)
+{
+  y=a+(b*x)
+  return(y)
+}
+x=seq(-10,10,by=0.1)
+plot(x,modelo_lineal(x,4,2), type = "l", lwd=3, col="blueviolet", main = "Modelos lineales",
+     xlab="Valor en X", ylab="Valor en Y")
+
+```
+
+\newpage
+
+
+## Modelo log-log o doble logarítmico
+
+El modelo lineal dado por: 
+
+\begin{equation*}
+\begin{split}
+\ln {y_{i}}= \beta_{0} + \beta_{1} \ln x_{i} + u_{i}
+\end{split}
+\end{equation*}
+
+Cuya función ajustada es:  
+
+\begin{equation*}
+\begin{split}
+\hat{\ln {y_{i}}} &= \hat{\beta_{0}} + \hat{\beta_{1}} \ln x_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Viendo el modelo:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln {y_{i}}} &= 1 + 5 \ln x_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+log_log2 <- function(x,a,b)
+{
+  y=a+(b*x)
+  return(y)
+}
+x=log(seq(0.2,8,by=0.1))
+plot(x,log_log2(x,1,5), type = "l", lwd=3, col="darkgoldenrod3", main = "Modelos log-log",
+     xlab="log(x)", ylab="log(y)",xlim=c(-1.5,2),ylim=c(-5,15))
+```
+
+\newpage
+
+Notemos que el mismo modelo:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln {y_{i}}} &= 1 + 5 \ln x_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+En otra forma tambien es:
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= e^{1 + 5 \ln x_{i}}\\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE , fig.height= 3.9, fig.width = 5.5, fig.align = "center"}
+log_log <- function(x,a,b)
+{
+  y=exp(a+(b*log(x)))
+  return(y)
+}
+x=seq(0.2,6,by=0.1)
+plot(x,log_log(x,1,5),type = "l",lwd=3,col="darkgoldenrod3",main = "Modelos log-log",
+     xlab="Valor en X", ylab="Valor en Y")
+```
+
+
+\newpage
+
+## Modelo semi-logarítmico: lineal-logarítmico
+
+El modelo lineal logarítmico dado por:
+
+\begin{equation*}
+\begin{split}
+y_{i} &= \beta_{0} + \beta_{1}\ln{x_{i}} + u_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Cuya función ajustada es:
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= \hat{\beta_{0}} + \hat{\beta_{1}}\ln{x_{i}} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Analizando el modelo:
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= 1 + 5\ln{x_{i}} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+lin_log2 <- function(x,a,b)
+{
+  y=a+(b*x)
+  return(y)
+}
+x=log(seq(0.2,8,by=0.1))
+plot(x,lin_log2(x,1,5),type = "l",lwd=3,col="darkgreen",main = "Modelo lineal-logaritmico",
+     xlab="log(X)", ylab="Valor en Y",xlim=c(-1.5,2),ylim=c(-5,15))
+```
+
+\newpage
+
+Cuya función ajustada tambien es:
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= 1 + 5\ln{x_{i}} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+lin_log <- function(x,a,b)
+{
+  y=a+(b*log(x))
+  return(y)
+}
+x=seq(0.2,8,by=0.1)
+plot(x,lin_log(x,1,5),type = "l",lwd=3,col="darkgreen",main = "Modelos lineal-logaritmico",
+     xlab="Valor en X", ylab="Valor en Y",xlim=c(0,8),ylim=c(-5,15))
+```
+
+
+\newpage
+
+## Modelo semi-logarítmico: logarítmico-lineal
+
+\begin{equation*}
+\begin{split}
+\ln y_{i} &= \beta_{0} + \beta_{1} x_{i} + u_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Cuya función ajustada es:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln{y_{i}}} &= \hat{\beta_{0}} + \hat{\beta_{1}} x_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Analizando
+
+\begin{equation*}
+\begin{split}
+\hat{\ln{y_{i}}} &= 3.2 + 4 x_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+log_lin2 <- function(x,a,b)
+{
+  y=a+(b*x)
+  return(y)
+}
+x=seq(0.2,5,by=0.1)
+plot(x,log_lin2(x,3.2,4),type = "l",lwd=3,col="firebrick",main = "Modelos logaritmico-lineal",
+     xlab="Valor en X", ylab="log(Y)")
+```
+
+\newpage
+
+Cuya representacción tambien es
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= e^{3.2 + 4 x_{i}} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+log_lin <- function(x,a,b)
+{
+  y=exp(a+(b*x))
+  return(y)
+}
+x=seq(0.2,5,by=0.1)
+plot(x,log_lin(x,3.2,4),type = "l",lwd=3,col="firebrick",main = "Modelos logaritmico-lineal",
+     xlab="Valor en X", ylab="Valor en Y",xlim=c(0,5))
+```
+
+\newpage
+
+## Modelo logarítmico recíproco
+
+El modelo log-recíproco esta dado por:
+
+\begin{equation*}
+\begin{split}
+\ln y = \beta_{0} - \beta_{1} \frac{1}{x} + u_{i} \\
+x_{i} &> 0
+\end{split}
+\end{equation*}
+
+Cuya función ajustada es:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln y_{i} }= \hat{\beta_{0}} - \hat{\beta_{1}} \frac{1}{x} \\
+x_{i} &\neq 0
+\end{split}
+\end{equation*}
+
+Analizando el siguiente caso:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln y_{i}} &= 4 - \frac{2}{x} \\
+x_{i} &\neq 0
+\end{split}
+\end{equation*}
+```{r, echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+log_rec2 <- function(x,a,b)
+{
+  y=a+(b*x)
+  return(y)
+}
+x=1/seq(0.2,5,by=0.1)
+plot(x,log_rec2(x,4,2),type = "l",lwd=3,col="deeppink3",main = "Modelos logaritmico-reciproco",
+     xlab="1/X", ylab="log(Y)")
+```
+
+\newpage
+
+Cuya representación tambien es:
+
+\begin{equation*}
+\begin{split}
+\hat{y_{i}} &= e^{4 - \frac{2}{x}} \\
+x_{i} &\neq 0
+\end{split}
+\end{equation*}
+
+```{r,echo = FALSE , fig.height= 4.3, fig.width = 6, fig.align = "center"}
+log_rec <- function(x,a,b)
+{
+  y=exp(a+(b/x))
+  return(y)
+}
+x=seq(0.2,5,by=0.1)
+plot(x,log_rec(x,4,2),type = "l",lwd=3,col="deeppink3",main = "Modelos logaritmico-reciproco",
+     xlab="Valor en X", ylab="Valor en Y",xlim=c(0,5))
+```
+
+\newpage
+
+# 2) ¿Qué son las pruebas de hipótesis y para qué sirven?
+
+Una prueba de hipótesis es una regla que especifica si se puede aceptar o rechazar una afirmación acerca de una población dependiendo de la evidencia proporcionada por una muestra de datos. Se hacen inferencias estadisticas en:
+
+1. Medias
+2. Proporciones
+3. Diferencias entre medias
+4. Diferencias entre proporciones
+5. Medias con tamaño muestral menor a 30
+6. Diferencias de media con tamaño muestral menor a 30
+7. Varianzas
+
+Una prueba de hipótesis examina dos hipótesis opuestas sobre una población: la hipótesis nula (si la media es igual a algo, si la proporcion sera cero o la diferencia nula) y la hipótesis alternativa. La hipótesis nula es el enunciado que se probará. Por lo general, la hipótesis nula es un enunciado de que "no hay efecto" o "no hay diferencia".
+
+Estas pruebas se realizan bajo el supuesto del teorema de limite central y dependiendo la distribucion de sus variables por funciones conocidas, con apoyo de tablas de probabilidad se acepta io se rechaza la hipotesis a un nivelñ es decir:
+
+$$1-\alpha=P(\frac{x-\mu}{\sigma} > \frac{\tau - \mu}{\sigma})$$
+Se compara el estadistico (del lado izquierdo) y se rechaza la hipotesis nula si la probabilidad $$1-\alpha$$ es mayor. En caso contrario se acepta la hipotesis. 
+
+Usualmente se suele ocupar el **p value** que es otro estadistico el cual nos dice que si obtenemos el **p value** y este valor es menor a la probabilidad al nivel establecido (si fuera al 5%) no se rechaza la hipotesis pero si es mayor se rechaza la hipotesis nula
+\newpage
+
+# 3) Datos de consumo privado nacional y el ingreso disponible total
+
+
+```{r, echo=FALSE}
+consumo <- c(5526.04,6031.74,6562.65,7150.74,7726.77,8268.75,8006.57,8734.84,9504.28,10237.97,
+              10819.25,11509.61,12162.87,13188.67,14301.25,15215.29)
+ingreso <- c(5575.87,6145.48,6674.08,7424.31,7958.09,8609.55,8959.36,9684.60,10803.50,11333.43,
+             11798.73,12698.24,13752.80,14636.40,15486.60,16301.38)
+tiempo <- c(2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018)
+data <- data.frame("Tiempo"=tiempo,"Consumo"=consumo,"Ingreso"=ingreso)
+kable(data,format="markdown")
+```
+
+## Modelo lineal asociado
+
+El modelo asociado es:
+
+$$ y_{t}=\alpha_{0} + \alpha_{1}x_{t} + u_{i}$$
+$y_{t}$=consumo privado nacional
+
+$x_{t}$=ingreso nacional disponible
+
+## Calculando las medidas requeridas
+
+La cantidad de datos de consumo e ingreso son:
+
+```{r, echo=TRUE}
+tam_consumo=length(consumo)
+tam_consumo
+tam_ingreso=length(ingreso)
+tam_ingreso
+```
+\newpage
+
+La media poblacional cuya fórmula es: $$\bar{x}=\frac{\sum_{i=1}^{n}x_{i}}{n}$$
+La media poblacional de consumo e ingreso son:
+
+```{r, echo=TRUE}
+prom_consumo=mean(consumo)
+prom_consumo
+prom_ingreso=mean(ingreso)
+prom_ingreso
+```
+
+La varianza  poblacional cuya fórmula es: $$S_{x}^{2}=\frac{\sum_{i=1}^{n}(x_{i}-\bar{x})^{2}}{n}$$
+La varianza  poblacional de consumo e ingreso son:
+
+```{r, echo=TRUE}
+varianza_consumo=sum((consumo-prom_consumo)^2)/tam_consumo
+varianza_consumo
+varianza_ingreso=sum((ingreso-prom_ingreso)^2)/tam_ingreso
+varianza_ingreso
+```
+
+La covarianza poblacional entre dos variables es: $$S_{XY}=\frac{\sum_{i=1}^{n}(x_{i}-\bar{x})(y_{i}-\bar{y})}{n}$$
+La covarianza poblacional entre consumo e ingreso es
+
+```{r, echo=TRUE}
+covarianza_con_ing=sum((consumo-prom_consumo)*(ingreso-prom_ingreso))/tam_ingreso
+# tam_ingreso=tam_consumo 
+covarianza_con_ing
+
+```
+\newpage
+
+## Estimando modelo lineal por MCO
+
+
+```{r, echo=TRUE}
+mco_con_ingre <- lm(consumo ~ ingreso)
+mco_con_ingre
+```
+
+## Parametros obtenidos y modelo estimado
+
+Por lo tanto el modelo lineal queda como: 
+\begin{equation*}
+\hat{y_{t}}=594.059 + 0.8665 x_{t}
+\end{equation*}
+
+Es decir tiene una pendiente positiva de 0.8665 que es el valor promedio cuando $x_{t}=0$
+
+\newpage
+
+## Valores ajustados y residuales
+
+A manera de resumen se tiene que
+
+```{r, echo = FALSE}
+f_con_ing <- function(x)
+{
+  y=594.059+(0.8665*x)
+  return(y)
+}
+valor_pred=f_con_ing(ingreso)
+residuales = consumo-valor_pred
+comparacion=data.frame("Reales_consumo"=consumo,"Ajustados_consumo"=valor_pred,
+                       "Residuales"=residuales)
+kable(comparacion,format="markdown")
+```
+
+
+ \newpage
+ 
+# 4) Grafica de dispersion y linea de tendencia de los datos de consumo privado con ingreso disponible
+
+El modelo lineal queda como: 
+
+\begin{equation*}
+\begin{split}
+\hat{consumo_{t}} = 594.059 + 0.8665(ingreso_{t}) \\
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE}
+plot(ingreso,consumo,col="red",lwd=3,
+     main="Regresion de consumo privado e ingreso nacional",
+     xlab="Ingreso nacional disponible", ylab="Consumo privado nacional")
+abline(mco_con_ingre,col="darkgreen",lwd=3)
+```
