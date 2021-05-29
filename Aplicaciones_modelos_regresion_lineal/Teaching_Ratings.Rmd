@@ -1,0 +1,139 @@
+---
+title: "Teaching Ratings"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+\newpage
+
+# Descripción
+
+La siguiente tabla contiene información que viene del archivo Teaching contiene datos sobre las evaluaciones de la asignatura, caracteristicas de la asignatura y del profesopara 463 cursos de la Universidad de Texas en Austin. 
+
+## Modelo
+
+Se propone el modelo
+
+\begin{equation*}
+\begin{split}
+\text{course\_eval}_{i} &= \beta_{0} + \beta_{1}beauty_{i} + u_{i} \\
+i &= 1,2,...,463
+\end{split}
+\end{equation*}
+
+El nombre de columnas de la base de datos se mustra a continuación
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+load("C:/Users/aleja/Alejandro/Bases/TeachingRatings.RData")
+names(TeachingRatings)
+```
+
+Mostrando las primeras observaciones de la tabla para las variables requeridas
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+head_teach <- head(TeachingRatings,10)
+kable(head_teach, format="markdown")
+```
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{\text{course\_eval}_{i}} &= \hat{\beta_{0}} + \hat{\beta_{1}}beauty_{i} \\
+i &= 1,2,...,463
+\end{split}
+\end{equation*}
+
+\newpage
+
+## Visualización de los datos
+
+Una visualizacion previa de los datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(TeachingRatings$beauty, TeachingRatings$course_eval, col = "plum4", lwd = 3,
+main = "Teaching Ratings ", xlab = "Beauty", ylab = "Course_eval")
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+La regresion del modelo es
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+ols_teach <- lm(course_eval ~ beauty, data = TeachingRatings)
+ols_teach
+```
+
+## Modelo ajustado
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{\text{course\_eval}_{i}} &= 3.998 + 0.133 beauty_{i} \\
+i &= 1,2,...,463
+\end{split}
+\end{equation*}
+
+\newpage
+
+De tal forma
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(TeachingRatings$beauty, TeachingRatings$course_eval, col = "plum4", lwd = 3,
+main = "Teaching Ratings ", xlab = "Beauty", ylab = "Course_eval")
+abline(ols_teach, col = "darkgreen", lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+Notemos que la media muestral de la variable **course_eval** es la misma que la del estimador independiente esto se debe a que la media muestral de la variable **beauty** es casi 0
+
+Es decir para el termino de 
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+mean(TeachingRatings$beauty)
+mean(TeachingRatings$course_eval)
+```
+
+\newpage
+
+## Resumen general
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+ols_residuals = residuals(ols_teach)
+data_res <- data.frame("Course_eval" = TeachingRatings$course_eval,
+                   "Course_eval Ajustados" = fitted(ols_teach),
+                   "Residuales"= ols_residuals)
+kable(head(data_res,15),format="markdown")
+```
+
+## Distribucion de los residuales
+
+Observando la distribucion de los errores para estos datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+hist(ols_residuals, freq=FALSE ,main="Distribucion de residuos del modelo lineal",
+col="mediumpurple1")
+lines(density(ols_residuals),col="navyblue",lwd=2)
+```
+
+
