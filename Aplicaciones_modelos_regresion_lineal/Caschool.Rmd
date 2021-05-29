@@ -1,0 +1,225 @@
+---
+title: "Caschool"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+\newpage
+
+# Descripción del problema
+
+La base de datos caschool.RData contiene informacion de las calificaciones de estudiantes de puntaje de prueba de California
+
+Una pequeña descripción de las variables de la base de datos se da a continuación
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+load("C:/Users/aleja/Alejandro/Bases/caschool.RData")
+kable(description, format="markdown")
+```
+
+# Modelo
+
+Se propone el modelo
+
+\begin{equation*}
+\begin{split}
+testscr_{i} &= \beta_{0} + \beta_{1}str_{i} + u_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+El nombre de columnas de la base de datos se muestra a continuación
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+names(caschool)
+```
+
+\newpage
+
+Mostrando las primeras observaciones de la tabla para las variables requeridas
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+head_caschool <- head(caschool[,c("dist_cod","testscr","str")],20)
+kable(head_caschool, format="markdown")
+```
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{testscr_{i}} &= \hat{\beta_{0}} + \hat{\beta_{1}}str_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+\newpage
+
+# Cuantiles y percentiles de las variables
+
+Veamos sus diagramas de caja para las variables a analizar
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+par(mfrow=c(1, 2))
+boxplot(x = caschool$testscr, ylab = 'Testscr', notch = TRUE, outpch = 25, lwd = 2, col = "darkgreen")
+boxplot(x = caschool$str, ylab = 'Str', notch = TRUE, outpch = 25, lwd = 2, col = "darkorange")
+```
+
+Veamos algunos de sus cuantiles y percentiles mas comunes
+        
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+percentiles <- c(0.1,0.25,0.40,0.50,0.60,0.75,0.90)
+quantil_str <- quantile(caschool$str, percentiles)
+quantil_testscr <- quantile(caschool$testscr, percentiles)
+data_per <- data.frame(percentil= rbind(quantil_str,quantil_testscr))
+kable(data_per, format="markdown")
+```
+
+\newpage
+
+# Visualización de los datos
+
+Una visualización previa de los datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(caschool$str, caschool$testscr, col = "hotpink4", lwd = 3,
+     main = "Caschool", xlab = "student teacher ratio", ylab = "Testscr")
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+La regresión del modelo es
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+ols_caschool <- lm(testscr ~ str, data = caschool)
+ols_residuals <- residuals(ols_caschool)
+ols_ajustados <- fitted(ols_caschool)
+ols_caschool 
+```
+
+# Modelo ajustado
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{testscr_{i}} &= 698.93 -2.28 str_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+\newpage
+
+De tal forma
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(caschool$str, caschool$testscr, col = "hotpink4", lwd = 3,
+     main = "Caschool", xlab = "student teacher ratio", ylab = "Testscr")
+abline(ols_caschool, col = "mediumorchid4", lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+# Predicción
+
+Se hacen unas estimaciones para valores de **str**
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+nuevas.str <- data.frame(str = c(17,18,19))
+predict(ols_caschool, nuevas.str)
+
+```
+
+\newpage
+
+# Medidas estadisticas extras
+
+Cantidad de datos totales
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+n <- length (caschool$str); n
+```
+
+Suma total de cuadrados
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+stc <- sum((caschool$testscr - mean(caschool$testscr))^2); stc
+```
+
+Suma explicada de cuadrados
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+
+sec <- sum((ols_ajustados - mean(caschool$testscr))^2); sec
+```
+
+Suma de residuales al cuadrado
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+errores <- caschool$testscr - ols_ajustados
+src <- sum(errores^2); src
+```
+
+Error estándar de la regresión
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+esr <- sqrt (src/(n-2)) ; esr
+```
+
+Coeficiente de determinación $R^{2}$
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+R_2 <- sec/stc; R_2
+```
+
+Lo que nos dice este modelo es que ajusta los datos en un 5.124%
+
+\newpage
+
+Por linea de comando
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+summary(ols_caschool)$sigma
+summary(ols_caschool)$r.squared
+```
+
+\newpage
+
+# Distribución de los residuales
+
+Observando la distribución de los errores para estos datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+hist(ols_residuals, freq=FALSE ,main="Distribucion de residuos del modelo lineal",
+col="khaki")
+lines(density(ols_residuals),col="khaki4",lwd=2)
+```
+
+\newpage
+
+# Resumen general
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+data_res <- data.frame("Testscr" = caschool$testscr,
+                       "Testscr_Ajustados" = ols_ajustados,
+                       "Residuales"= ols_residuals)
+kable(head(data_res,15),format="markdown")
+```
+

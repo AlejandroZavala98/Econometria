@@ -21,7 +21,7 @@ Git: https://github.com/AlejandroZavala98
 
 La siguiente tabla contiene información que viene del archivo Teaching contiene datos sobre las evaluaciones de la asignatura, caracteristicas de la asignatura y del profesopara 463 cursos de la Universidad de Texas en Austin. 
 
-## Modelo
+# Modelo
 
 Se propone el modelo
 
@@ -61,7 +61,7 @@ i &= 1,2,...,463
 
 \newpage
 
-## Visualización de los datos
+# Visualización de los datos
 
 Una visualizacion previa de los datos
 
@@ -81,7 +81,7 @@ ols_teach <- lm(course_eval ~ beauty, data = TeachingRatings)
 ols_teach
 ```
 
-## Modelo ajustado
+# Modelo ajustado
 
 El modelo ajustado es
 
@@ -116,17 +116,19 @@ mean(TeachingRatings$course_eval)
 
 \newpage
 
-## Resumen general
+# Resumen general
 
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
 ols_residuals = residuals(ols_teach)
 data_res <- data.frame("Course_eval" = TeachingRatings$course_eval,
                    "Course_eval Ajustados" = fitted(ols_teach),
                    "Residuales"= ols_residuals)
-kable(head(data_res,15),format="markdown")
+kable(head(data_res,20),format="markdown")
 ```
 
-## Distribucion de los residuales
+\newpage
+
+# Distribucion de los residuales
 
 Observando la distribucion de los errores para estos datos
 

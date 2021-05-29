@@ -1,0 +1,223 @@
+---
+title: "CPS08"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+\newpage
+
+# Descripción
+
+La base de datos cps08.RData contiene la distribución de igresos salariales en Estados Unidos en 2008, contiene datos relativos a los ingresos por hora de los gradudados universitarios de 25 a 34 años. El objetivo es investigar la relación entre la edad de un trabajador y sus ingresos salariales 
+
+# Modelo
+
+Se propone el modelo
+
+\begin{equation*}
+\begin{split}
+ahe_{i} &= \beta_{0} + \beta_{1}age_{i} + u_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+
+Una pequeña descripción de las variables de la base de datos se da a continuación
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+load("C:/Users/aleja/Alejandro/Bases/cps08.RData")
+kable(description, format="markdown")
+```
+
+
+El nombre de columnas de la base de datos se mustra a continuación
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+load("C:/Users/aleja/Alejandro/Bases/cps08.RData")
+names(cps08)
+```
+
+Mostrando las primeras observaciones de la tabla para las variables requeridas
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+head_cps <- head(cps08,10)
+kable(head_cps, format="markdown")
+```
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{ahe_{i}} &= \hat{\beta_{0}} + \hat{\beta_{1}}age_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+\newpage
+
+# Visualización de los datos
+
+Una visualización previa de los datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(cps08$age, cps08$ahe, col = "darkorange3", lwd = 3,
+main = "CPS 08", xlab = "Age", ylab = "Ahe")
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+La regresión del modelo es
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+ols_cps <- lm(ahe ~ age, data = cps08)
+ols_cps
+```
+
+# Modelo ajustado
+
+El modelo ajustado es
+
+\begin{equation*}
+\begin{split}
+\hat{ahe_{i}} &= 1.082 + 0.605 age_{i} \\
+i &= 1,2,...,n
+\end{split}
+\end{equation*}
+
+\newpage
+
+De tal forma
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+plot(cps08$age, cps08$ahe, col = "darkorange3", lwd = 3,
+main = " CPS 08 ", xlab = "Age", ylab = "Ahe")
+abline(ols_cps, col = "dodgerblue3", lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+\newpage
+
+# Predicción
+
+supongamos que Alejandro es un trabajador de 22 años. Vamos a predecir los ingresos de Alejandro
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+f_predict <- function(x,a,b)
+{
+a+(b*x)
+}
+
+beta_0 <- ols_cps$coefficients[1]
+beta_1 <- ols_cps$coefficients[2]
+
+f_predict(22,beta_0,beta_1)
+
+```
+
+Por linea de comando
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+nuevas.edades <- data.frame(age = c(22))
+predict(ols_cps, nuevas.edades)
+
+```
+
+
+\newpage
+
+# Resumen general
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+ols_residuals <- residuals(ols_cps)
+ols_ajustados <- fitted(ols_cps)
+data_res <- data.frame("Ahe" = cps08$ahe,
+                       "Ahe_Ajustados" = ols_ajustados,
+                       "Residuales"= ols_residuals)
+kable(head(data_res,15),format="markdown")
+```
+
+# Distribucion de los residuales
+
+Observando la distribucion de los errores para estos datos
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+hist(ols_residuals, freq=FALSE ,main="Distribucion de residuos del modelo lineal",
+col="mediumpurple1")
+lines(density(ols_residuals),col="dodgerblue3",lwd=2)
+```
+
+\newpage
+
+# Medidas estadisticas extras
+
+
+Cantidad de datos totales
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+n <- length (cps08$ahe); n
+```
+
+Suma total de cuadrados
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+# alpha <- 1.082; beta <- 0.605
+# ahe.hat <- alpha + beta * cps08$age estos son los ajustados manualmente
+stc <- sum((cps08$ahe - mean(cps08$ahe))^2); stc
+```
+
+Suma explicada de cuadrados
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+sec <- sum((ols_ajustados - mean(cps08$ahe))^2); sec
+```
+
+Suma de residuales al cuadrado
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+errores <- cps08$ahe - ols_ajustados
+src <- sum(errores^2); src
+```
+
+Error estándar de la regresión
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+esr <- sqrt (src/(n-2)) ; esr
+```
+
+Coeficiente de determinación $R^{2}$
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+R_2 <- sec/stc; R_2
+```
+
+Lo que nos dice este modelo es que ajusta los datos en un 2.902%
+
+\newpage
+
+Por linea de comando
+
+```{r, echo = TRUE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+summary(ols_cps)$sigma
+summary(ols_cps)$r.squared
+```
+
