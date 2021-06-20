@@ -1,0 +1,147 @@
+---
+title: "Conocimientos generales y calificaciones de cálculo"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+library(lmtest)
+library(sandwich)
+```
+
+\newpage
+
+# Descripción del problema
+
+La siguiente tabla representa una muestra de las calificaciones de un examen de conocimientos matemáticos y las calificaciones de cálculo para 10 estudiantes de primer año de universidad seleccionados de manera independiente. Dada esta evidencia ¿diria usted que las calificaciones del examen de conocimientos matemáticos y las calificaciones de cálculo son independientes?
+
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+num_est <- c(1,2,3,4,5,6,7,8,9,10)
+con_mat <- c(39,43,21,64,57,47,28,75,34,52)
+cal_fin <- c(65,78,52,82,92,89,73,98,56,75)
+
+data <- data.frame("Estudiante" = num_est,
+                   "Conocimientos_matematicos" = con_mat,
+                   "Calificacion_calculo"= cal_fin)
+
+kable(data, format="markdown")
+```
+
+
+Cuyo grafico de dispersión es:
+
+```{r, echo=FALSE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+plot(data$Conocimientos_matematicos,
+     data$Calificacion_calculo, col="plum4", lwd=3,
+     main="Calificaciones y conocimientos ", xlab="Calificaciones del examen de conocimientos",
+     ylab="Calificaciones de calculo")
+```
+
+\newpage
+
+# Modelo
+
+
+Se propone el modelo
+
+\begin{equation*}
+\begin{split}
+y_{i} &= \beta_{0} + \beta_{1}x_{i} + u_{i} \\
+x_{i} &= \textup{Calificaciones del examen de conocimientos para el estudiante i-esimo} \\
+y_{i} &= \text{Calificaciones de cálculo para el estudiante i-esimo} \\
+i &= 1,2,...,10 \\
+\end{split}
+\end{equation*}
+
+Finalmente el modelo ajustado es:
+
+\begin{equation*}
+\hat{y_{i}} = \hat{\beta_{0}} + \hat{\beta_{1}}x_{i}
+\end{equation*}
+
+Haciendo una regresión lineal, se obtiene:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+ols <- lm(Calificacion_calculo ~ Conocimientos_matematicos,data = data)
+summa_ols <- summary(ols)
+coef_ols <- coef(summa_ols)
+kable(coef_ols)
+```
+
+Finalmente el modelo ajustado es:
+
+\begin{equation*}
+\hat{y_{i}} = 40.7841552 + 0.7655618 x_{i}
+\end{equation*}
+
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+plot(data$Conocimientos_matematicos,
+     data$Calificacion_calculo, col="plum4", lwd=3,
+     main="Calificaciones y conocimientos ", xlab="Calificaciones del examen de conocimientos",
+     ylab="Calificaciones de calculo")
+abline(ols, col = "dodgerblue3", lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)  
+```
+
+\newpage
+
+# Coeficiente de correlación muestral
+
+Ahora, obteniendo su coeficiente de correlación muestral "r"
+
+\begin{equation*}
+r = \frac{\sum_{i=1}^{n}(x_{i}-\bar{x})(y_{i}-\bar{y})}{\sqrt{\sum_{i=1}^{n}(x_{i}-\bar{x})^2 \sum_{i=1}^{n}(y_{i}-\bar{y})^2}}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+correlacion_r <- cor(data$Conocimientos_matematicos,data$Calificacion_calculo);correlacion_r
+```
+
+Este coeficiente como es positivo nos dice que que para esta muestra los estudiantes  de universidad con más altas calificaciones en el examen de conocimientos tienden a obtener mas altas calificaciones en cálculo.
+
+Nuestro estadistico de prueba 
+
+\begin{equation*}
+\begin{split}
+t &= \frac{r\sqrt{n-2}}{\sqrt{1-r^{2}}} \\
+n &= 10
+\end{split}
+\end{equation*}
+
+
+Nuestra hipotesis queda de la siguiente manera:
+\begin{equation*}
+H_{o}:\rho=0 \ \ VS \ \ H_{a}:\rho\neq0
+\end{equation*}
+
+Finalmente nos da
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+correlacion_test <- cor.test(data$Conocimientos_matematicos,data$Calificacion_calculo);correlacion_test
+```
+
+Observemos que por tablas de la distribución t de Student, a un nivel del 95%. El punto critico es $t_{\alpha / 2}=t_{0.025}=2.306$. Por lo tanto la evidencia sugiere que las calificaciones de conocimientos matemáticos y las calificaciones de cálculo son **dependientes**. Esto es porque nuestr estadistico t recae en la región de rechazo
+
+Notemos que nuestro coeficiente de determinacion $r^{2}$. Las calificaciones finales de cálculo se explica al ajustar el modelo lineal usando las calificaciones de conocimientos matemáticos com ola variable independiente. El modelo de regresión funciona bien
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+summa_ols$r.squared
+```
+

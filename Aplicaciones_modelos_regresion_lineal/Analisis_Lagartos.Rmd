@@ -1,0 +1,211 @@
+---
+title: "Lagartos en Florida"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+
+---
+
+\newpage
+
+# Informacion de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+library(knitr)
+library(lmtest)
+library(sandwich)
+```
+
+\newpage
+
+# Descripción del problema
+
+La siguiente tabla denota el peso (en libras) y la longitud (en pulgadas) de 15 lagartos capturados en la región central de Florida. Debido a que la longitud es más fácil de observar (quizá de una fotografía) que el peso para los lagartos en su hábita natural, se busca construir un modelo que relacione peso con longitud.
+
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+lagarto_id <- c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15)
+longitud <- c(3.87,3.61,4.33,3.43,3.81,3.83,3.46,3.76,3.5,3.58,4.19,3.78,3.71,3.73,3.78)
+peso <- c(4.87,3.93,6.46,3.33,4.38,4.7,3.5,4.5,3.58,3.64,5.9,4.43,4.38,4.42,4.25)
+
+data <- data.frame("Lagarto" = lagarto_id,
+                   "Longitud" = exp(longitud),
+                   "Peso"= exp(peso))
+
+kable(data, format="markdown")
+```
+
+## Grafico de dispersion 
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+plot(data$Longitud,data$Peso, col="plum4", lwd=3,
+     main="Lagartos en California ", xlab="Longitud",ylab="Peso")
+```
+
+## Inferencias a los parámetros
+
+Si hacemos una regresión lineal con el modelo:
+
+\begin{equation*}
+\begin{split}
+peso_{i} &= \beta_{0} + \beta_{1}longitud_{i} + u_{i} \\
+i &= 1,2,...,15 \\
+\end{split}
+\end{equation*}
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+ols_lineal <- lm(Peso ~ Longitud,data=data)
+summary_ols_lineal <- summary(ols_lineal)
+coef_ols_linal <- coef(summary_ols_lineal)
+kable(coef_ols_linal)
+```
+
+## Grafica del modelo lineal
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+plot(data$Longitud,data$Peso, col="plum4", lwd=3,
+     main="Lagartos en California ", xlab="Longitud",ylab="Peso")
+abline(ols_lineal, col = "dodgerblue3", lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)
+```
+
+Cuya función ajustada es 
+
+\begin{equation*}
+\begin{split}
+\hat{peso_{i}} &= -431.09089 + 12.64697longitud_{i}
+\end{split}
+\end{equation*}
+
+\newpage
+
+## Coeficiente de determinación y predicciones al nivel 95%
+
+
+Y con coeficiente de determinación $R^{2}$ 
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+summary_ols_lineal$r.squared
+```
+
+Haciendo unas predicciones, con intervalo de confianza al 95%
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+nuevos_valores <- c(35,40,45,50,55,60,65,70,75,80)
+nuevos.valores <- data.frame(Longitud = nuevos_valores)
+predicciones <- predict(ols_lineal, nuevos.valores ,interval="prediction", level=0.95)
+predicciones_sin_intervalo = predict(ols_lineal, nuevos.valores)
+dataframe_summary1 <- data.frame("Valores" = nuevos.valores,
+                                 "Ajustados"=predicciones_sin_intervalo)
+kable(cbind(nuevos.valores,predicciones))
+
+```
+
+
+\newpage
+
+# Modelo exponencial
+
+Si hacemos una regresión lineal con el modelo exponencial:
+
+\begin{equation*}
+\begin{split}
+\ln{peso_{i}} &= \ln{\beta_{0}} + \beta_{1}\ln{longitud_{i}} + u_{i} \\
+i &= 1,2,...,15 \\
+\end{split}
+\end{equation*}
+
+## Inferencias a loas parámetros del modelo exponencial
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+ols_log <- lm(log(Peso) ~ log(Longitud),data=data)
+summary_ols_log <- summary(ols_log)
+coef_ols_log <- coef(summary_ols_log)
+kable(coef_ols_log)
+
+```
+
+De tal forma el modelo ajustado (con algunas transformaciones) es:
+
+\begin{equation*}
+\begin{split}
+\hat{\ln{peso_i}} &= -8.476067 + 3.431098\ln{logitud_{i}} \\
+\hat{peso_{i}} &=  (0.000208)longitud_{i}^{3.431098}
+\end{split}
+\end{equation*}
+
+## Grafico del modelo exponencial
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+ajustados_peso <- function(longitud)
+{
+        (0.000208)*longitud^{3.431098}
+}
+
+val_x <- seq(min(data$Longitud),max(data$Longitud),by=1)
+plot(data$Longitud,data$Peso, col="plum4", lwd=3,
+     main="Lagartos en California ", xlab="Longitud",ylab="Peso")
+points(val_x,ajustados_peso(val_x), col = "dodgerblue3",type="l",lwd = 4)
+grid(nx = NULL, ny = NULL,
+     lty = 2,      # Tipo de ínea
+     col = "gray", # Color
+     lwd = 2)
+```
+
+\newpage
+
+## Coeficiente de determinación y predicciones al nivel 95%
+
+Y con coeficiente de determinación $R^{2}$ 
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+summary_ols_log$r.squared
+```
+
+Analizando un resumen general de valores ajustados se tiene
+
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+predict_exp <- data.frame(predict(ols_log, nuevos.valores,interval="prediction", level=0.95))
+dataframe_summary2 <- data.frame("Prediciendo" =nuevos.valores,
+                                 "Ajustados"=exp(predict_exp["fit"]),
+                                 "lwr"=exp(predict_exp["lwr"]),
+                                 "upr"=exp(predict_exp["upr"]))
+kable(dataframe_summary2)
+
+```
+
+\newpage
+
+# Comparación de ambos modelos
+
+## Comparación de predicciones de ambos modelos
+
+```{r, echo=FALSE, fig.height= 4.5, fig.width = 5.5, fig.align="center"}
+dataframe_summary_final <- data.frame("Prediciendo"= nuevos.valores,
+                                      "Ajustados_exponenciales"=dataframe_summary2$fit,
+                                      "Ajustados_lineales"=dataframe_summary1$Ajustados)
+kable(dataframe_summary_final)
+```
+
+## Coeficiente de correlacion del modelo lineal
+
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+correlacion_test1 <- cor.test(data$Longitud,data$Peso);correlacion_test1
+```
+
+## Coeficiente de correlacion del modelo exponencial
+
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+correlacion_test <- cor.test(log(data$Longitud),log(data$Peso));correlacion_test
+```
