@@ -1,0 +1,260 @@
+---
+title: "Modelo de regresión lineal simple"
+output: pdf_document
+author: "Joel Alejandro Zavala Prieto"
+toc: true
+---
+
+\newpage
+
+# Informacion de contacto
+
+mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+\newpage
+
+# Modelo de regresión linal simple
+
+El modelo
+
+\begin {equation*}
+\begin{split}
+y = \beta_{0} + \beta_{1}x + \epsilon
+\end{split}
+\end{equation*}
+
+Es un modelo de regresión lineal simple si s cumple
+
+\begin {equation*}
+\begin{split}
+E[\epsilon] = 0
+\end{split}
+\end{equation*}
+
+Denotemos el estimador
+
+\begin {equation*}
+\begin{split}
+\hat{y} = \hat{\beta_{0}} + \hat{\beta_{1}}x
+\end{split}
+\end{equation*}
+
+Para cada obervación
+
+\begin {equation*}
+\begin{split}
+y_{i} &= \beta_{0} + \beta_{1}x_{i} + \epsilon_{i} \\
+\hat{y_{i}} &= \hat{\beta_{0}} + \hat{\beta_{1}}x_{i} \\
+i &= 1,2,3,...,n
+\end{split}
+\end{equation*}
+
+Se busca ademas
+
+\begin {equation*}
+\begin{split}
+\min SEC = \sum_{i=1}^{n} (y_{i}- \hat y_{i})^{2}
+\end{split}
+\end{equation*}
+
+De esta forma obtenemos
+
+\begin {equation*}
+\begin{split}
+\hat{\beta_{0}} &= \frac{\bar{y} \sum_{i=1}^{n} x_{i}^{2} - \bar{x} \sum_{i=1}^{n} x_{i} y_{i}}{\sum_{i=1}^{n} x_{i}^{2} - n \bar{x}} \\
+\hat{\beta_{1}} &= \frac{\sum_{i=1}^{n} x_{i} y_{i} - n \bar{x} \bar{y}}{\sum_{i=1}^{n} x_{i}^{2} - n \bar{x}}     
+\end{split}
+\end{equation*}
+
+\newpage
+
+## Valor auditado 
+
+Es frecuente que a los auditores se les exija comparar el valor auditado (o de lista) de un artículo de
+inventario contra el valor en libros. Si una empresa está llevando su inventario y libros actualizados, debería
+haber una fuerte relación lineal entre los valores auditados y en libros. Una empresa muestreó diez
+artículos de inventario y obtuvo los valores auditado y en libros que se dan en la tabla siguiente.Ajuste al modelo de regresión lineal simple
+
+```{r, echo=FALSE, fig.height= 3.9, fig.width = 5.5, fig.align="center"}
+library(knitr)
+
+num_iter <- c(1,2,3,4,5,6,7,8,9,10)
+num_audi <- c(9,14,7,29,45,109,40,238,60,170)
+num_book <- c(10,12,9,27,47,112,36,241,59,167)
+data_auditor <- data.frame("Item" = num_iter,
+                           "Valor_auditado" = num_audi,
+                           "Valor_en_libros"= num_book)
+kable(data_auditor,format="markdown")
+```
+
+Cuyo grafico de dispersión es:
+
+```{r, echo=FALSE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+plot(data_auditor$Valor_en_libros, data_auditor$Valor_auditado, col="plum4", lwd=3,
+main="Valor auditado ", xlab="Valor en libros", ylab="Valor auditado")
+```
+
+\newpage
+
+Denotemos como:
+
+\begin {equation*}
+\begin{split}
+x_{i} &= \textup{Valor en libros en el articulo i-ésimo} \\
+y_{i} &= \textup{Valor auditado del articulo i-ésimo} \\
+i &= 1,2,...,10
+\end{split}
+\end{equation*}
+
+Ahora:
+
+\begin {equation*}
+\begin{split}
+n = 10
+\end{split}
+\end{equation*}
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+n <- length(data_auditor$Valor_auditado)
+n
+```
+
+\begin {equation*}
+\begin{split}
+\bar{x}=\frac{\sum_{i=1}^{10} x_{i}}{10}
+\end{split}
+\end{equation*}
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+x_prom <- mean(data_auditor$Valor_en_libros)
+x_prom
+```
+
+\begin {equation*}
+\begin{split}
+\bar{y}=\frac{\sum_{i=1}^{10} y_{i}}{10}
+\end{split}
+\end{equation*}
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+y_prom <- mean(data_auditor$Valor_auditado)
+y_prom
+```
+
+\newpage
+
+\begin {equation*}
+\begin{split}
+\sum_{i=1}^{10} x_{i} y_{i}
+\end{split}
+\end{equation*}
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+xy_i <- sum(data_auditor$Valor_auditado*data_auditor$Valor_en_libros)
+xy_i
+```
+
+\begin {equation*}
+\begin{split}
+\sum_{i=1}^{10} x_{i}^{2}
+\end{split}
+\end{equation*}
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+x_i_2 <- sum(data_auditor$Valor_en_libros^2)
+x_i_2
+```
+
+Calculando se obtiene
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+beta_0 <- ((y_prom * x_i_2) - x_prom * xy_i)/(x_i_2 - (n*(x_prom^2)))
+beta_1 <- (xy_i - (n * x_prom * y_prom))/(x_i_2 - (n*(x_prom^2)))
+  
+beta_0
+beta_1
+```
+
+\begin {equation*}
+\begin{split}
+\hat{\beta_{0}} &= 0.719804 \\
+\hat{\beta_{1}} &= 0.991391
+\end{split}
+\end{equation*}
+
+\newpage
+
+## Funcion ajustada
+
+Que por linea de comando en R
+
+```{r, echo=TRUE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+mco_libros <- lm(Valor_auditado ~ Valor_en_libros,data = data_auditor)
+mco_libros
+```
+De esta forma
+
+\begin {equation*}
+\begin{split}
+y_{i} &= 0.719804 + 0.991391x_{i} \\
+\end{split}
+\end{equation*}
+
+```{r, echo=FALSE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+f_mco <- function(x)
+{
+  0.719804+(0.991391*x)
+}
+x_to_predict <- data_auditor$Valor_en_libros
+y_to_predict <- f_mco(x_to_predict)
+plot(data_auditor$Valor_en_libros, data_auditor$Valor_auditado, col="plum4", lwd=3,
+main="Valor auditado ", xlab="Valor en libros", ylab="Valor auditado")
+lines(x_to_predict, y_to_predict, col="slateblue3", lwd=2)
+```
+
+
+\newpage
+
+## Valores ajustados y residuales
+
+Comparando los valores:
+
+\begin {equation*}
+\begin{split}
+y_{i} &= Reales \\
+\hat{y_{i}} &= Ajustados \\
+y_{i} - \hat{y_{i}} &= Residuales
+\end{split}
+\end{equation*}
+
+```{r, echo=FALSE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+residuos_mco <- data_auditor$Valor_auditado-y_to_predict
+comparacion=data.frame("Reales" = data_auditor$Valor_auditado, 
+                       "Ajustados" = y_to_predict,
+                       "Residules" = residuos_mco)
+kable(comparacion,format="markdown")
+```
+
+
+## Predicciones
+
+```{r, echo = TRUE, fig.height = 5, fig.width = 6.5, fig.align = "center"}
+libros_to_predict <- data.frame(Valor_en_libros=c(100, 150, 200))  
+valor_predict <- predict(mco_libros, newdata = libros_to_predict)
+valor_predict
+```
+
+
+\newpage
+
+## Residuales
+
+Anaalizando la distribución de los residuales tenemos:
+
+```{r, echo=FALSE, fig.height= 5, fig.width = 6.5, fig.align="center"}
+hist(residuos_mco, freq=FALSE ,main="Distribucion de residuos del modelo lineal simple",
+col="mediumpurple1")
+lines(density(residuos_mco),col="navyblue",lwd=2)
+```
