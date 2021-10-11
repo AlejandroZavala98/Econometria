@@ -7,7 +7,7 @@ toc: true
 
 \newpage
 
-# Informacion de contacto
+# Información de contacto
 
 Mail: alejandro.zavala1001@gmail.com
 
@@ -19,7 +19,7 @@ Git: https://github.com/AlejandroZavala98
 
 # Descripción del problema
 
-La base de datos caschool.RData contiene informacion de las calificaciones de estudiantes de puntaje de prueba de California
+La base de datos caschool.RData contiene información de las calificaciones de estudiantes de puntaje de prueba de California
 
 Una pequeña descripción de las variables de la base de datos se da a continuación
 
@@ -27,11 +27,13 @@ Una pequeña descripción de las variables de la base de datos se da a continuac
 library(knitr)
 library(lmtest)
 library(sandwich)
-load("C:/Users/aleja/Alejandro/Bases/caschool.RData")
+library(MASS) 
+
+load("C:/Users/Alejandro Zavala/Zavala_Programas/Bases/caschool.RData")
 kable(description, format="markdown")
 ```
 
-# Modelo
+## Modelo
 
 Se propone el modelo
 
@@ -66,15 +68,15 @@ i &= 1,2,...,n
 \end{split}
 \end{equation*}
 
-# Visualización de los datos
+## Visualización de los datos
 
 Una visualización previa de los datos
 
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
-plot(caschool$str, caschool$testscr, col = "hotpink4", lwd = 3,
+plot(caschool$str, caschool$testscr, col = "cadetblue", lwd = 3,
      main = "Caschool", xlab = "student teacher ratio", ylab = "Testscr")
 grid(nx = NULL, ny = NULL,
-     lty = 2,      # Tipo de ínea
+     lty = 2,      # Tipo de línea
      col = "gray", # Color
      lwd = 2)  
 ```
@@ -102,7 +104,7 @@ i &= 1,2,...,n
 De tal forma
 
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
-plot(caschool$str, caschool$testscr, col = "hotpink4", lwd = 3,
+plot(caschool$str, caschool$testscr, col = "cadetblue", lwd = 3,
      main = "Caschool", xlab = "student teacher ratio", ylab = "Testscr")
 abline(ols_caschool, col = "mediumorchid4", lwd = 4)
 grid(nx = NULL, ny = NULL,
@@ -113,7 +115,7 @@ grid(nx = NULL, ny = NULL,
 
 \newpage
 
-# Inferencias respecto a los parámetros estimados
+## Inferencias respecto a los parámetros estimados
 
 El tamaño de la muestra es:
 
@@ -122,8 +124,7 @@ ols_residuales <- residuals(ols_caschool)
 n <- length(ols_residuales);n
 ```
 
-Recordemos que para hacer inferencias a los parámetros estimados se tiene la prueba de hipótesis
-
+Recordemos que la varianza de los estimadores se estima por:
 
 \begin{equation*}
 \begin{split}
@@ -153,10 +154,7 @@ Z = \frac{\hat{\beta_{i}}-\beta_{i0}}{\sigma \sqrt{c_{ii}}}
 Que a su vez
 
 \begin{equation*}
-\begin{split}
-T &= \frac{\hat{\beta_{i}}-\beta_{i0}}{S \sqrt{c_{ii}}} \\
-S &= \sqrt{\frac{SRC}{n-2}}
-\end{split}
+T = \frac{\hat{\beta_{i}}-\beta_{i0}}{S \sqrt{c_{ii}}}
 \end{equation*}
 
 Ahora queremos probar
@@ -179,7 +177,7 @@ S^{2} = \frac{SRC}{n-2}
 
 \newpage
 
-Recordemos que la Suma Total de Cuadrados "STC"
+Recordemos que la suma total de cuadrados "STC"
 
 
 \begin{equation*}
@@ -192,7 +190,7 @@ STC = \sum_{i=1}^{n} (y_{i} -\bar{y})^{2}
 stc <- sum((caschool$testscr - mean(caschool$testscr))^2); stc
 ```
 
-Recordemos que la Suma explicada de cuadrados "SEC"
+Recordemos que la suma explicada de cuadrados "SEC"
 
 \begin{equation*}
 \begin{split}
@@ -205,7 +203,7 @@ ols_ajustados <- fitted(ols_caschool)
 sec <- sum((ols_ajustados - mean(caschool$testscr))^2); sec
 ```
 
-Recordemos que la Suma de residuales cuadrados "SRC"
+Recordemos que la suma de residuales cuadrados "SRC"
 
 \begin{equation*}
 \begin{split}
@@ -246,7 +244,7 @@ Ahora para $c_{11}$
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
 c11 <- 1/(s_xx);c11
 ```
-
+Mas adelante se vera que los coeficientes $c_{ii}$ se obtienen de $(X^{t} X)^{-1}$
 
 \newpage
 
@@ -299,9 +297,9 @@ Por linea de comando
 summary(ols_caschool)
 ```
 
-# Intervalo de confianza para los parametros estimados
+## Intervalo de confianza para los parámetros estimados
 
-Un intervalo de confianza $100(1-\alpha)%$ para $\beta_{i}$
+Un intervalo de confianza al nivel 95% para $\beta_{i}$
 
 \begin{equation*}
 \begin{split}
@@ -328,6 +326,51 @@ Por linea de comando
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
 confint(object = ols_caschool, level = 0.95)
 ```
+
+\newpage
+
+# Aplicación de forma matricial
+
+Desarrollando en forma matricial se tiene que la matrix $A = (X^{t} X)^{-1}$
+
+```{r}
+y_value <- as.matrix(caschool$testscr);
+n_m <- length(y_value);
+X_matrix <- matrix(c(rep(1,n),caschool$str),nrow = n_m);
+# K <- ncol(X);
+A_matrix <- solve(t(X_matrix) %*% X_matrix);A_matrix# A=(X^t X)^-1
+
+```
+
+Nuestro estimador $S^{2} \sim \sigma^{2}$ es: 
+
+```{r}
+estimador_s^{2}
+```
+
+La matrix $(X^{t} X)^{-1}$:
+
+```{r}
+A_matrix
+```
+
+Nuestros estimadores son:
+
+```{r}
+ols_beta <- A_matrix %*% (t(X_matrix) %*% y_value) ;ols_beta
+```
+
+La matrix de varianza covarianza $S^{2} (X^{t} X)^{-1}$
+
+```{r}
+cov_var <- estimador_s^{2} * A_matrix ;cov_var
+```
+Que por linea de comando
+
+```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
+vcov(ols_caschool)
+```
+
 
 \newpage
 
@@ -378,7 +421,7 @@ testscr_{i} = \beta_{0} + \beta_{1} + \epsilon_{i}
 
 \newpage
 
-## Regrsión con variables dummy
+## Regresión con variables dummy
 
 Si realizamos una regresión al modelo, se obtiene
 
@@ -405,3 +448,4 @@ Y un intervalo de confianza para los estimadores
 ```{r, echo = FALSE, fig.height= 4.5, fig.width = 6.5, fig.align="center"}
 confint(object = ols_dummy, level = 0.95)
 ```
+
