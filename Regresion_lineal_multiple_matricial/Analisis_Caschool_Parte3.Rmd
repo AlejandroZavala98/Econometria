@@ -1,0 +1,335 @@
+---
+title: "Análisis para el dataset Caschool (Parte 3)"
+author: "Joel Alejandro Zavala Prieto"
+output: pdf_document
+toc: TRUE
+---
+
+\newpage
+
+# Información de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE , warning=FALSE}
+library(knitr) #Imprimir dataframes y tablas
+library(readxl) #Leer y escribir archivos en excel
+library(lmtest) #Test de coeficientes de parametros, prueba para Breusch-Pagan (homocedasticidad)
+library(sandwich) #Varianza heterocedastica y homocedastica
+library(MASS) # Matriz de varianza - covarianza
+library(nortest) # Pruebas como la de shapiro para normalidad de residuos
+
+rm(list=ls()) #Clean the environment
+```
+
+\newpage
+
+# Modelando el dataset caschool
+
+## Descripción
+
+En esta parte se hara un análisis del conjunto de datos "Caschool". Cuya descripción citare
+
+> "La base de datos caschool.RData contiene información de las calificaciones de estudiantes de puntaje de prueba de California
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+load("C:/Users/Alejandro Zavala/Zavala_Programas/Bases/caschool.RData")
+kable(description)
+```
+
+## Visualización
+
+Se muestra a continuación las variables a tomar para el analisis:
+
+Las calificaciones obtenidas en los exámenes (testscr) con la ratio estudiantes-maestros
+(str) y el porcentaje de estudiantes que estudian inglés (el_pct).
+
+Mostrando las primeras 10 observaciones
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+kable( head(caschool[,c("testscr","str","el_pct")] , 10) );
+```
+
+\newpage
+
+# Propuesta de modelo
+
+Se propone el modelo
+
+\begin {equation*}
+testscr_{i} = \beta_{0} + \beta_{1}str_{i} + \beta_{2}elpct_{i} + \epsilon_{i}
+\end{equation*}
+
+Cuya función ajustada es:
+
+\begin {equation*}
+\hat{testscr_{i}} = \hat{\beta_{0}} + \hat{\beta_{1}}str_{i} + \hat{\beta_{2}}elpct_{i}
+\end{equation*}
+
+# Ajuste por forma matricial
+
+Recordando el modelo $Y = X \beta$
+
+La matrix $X^{t}X$
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+#Estimacion de mco
+
+y_vector <- as.matrix(caschool$testscr); # Variable dependiente
+
+n_muestra <- length(y_vector); # Tamaño de la muestra
+
+x_mat <- matrix(c(rep(1,n_muestra),
+                  caschool$str,
+                  caschool$el_pct),
+                nrow = n_muestra); #Concatenacion en forma matricial
+
+k_variables <- ncol(x_mat);
+
+a_mat <- t(x_mat) %*% x_mat; a_mat
+```
+
+La matrix $(X^{t}X)^{-1}$
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+#Estimacion de mco
+# Y = XB
+#A <- solve(t(X) %*%X); # A=(XX)^-1
+a_inv_mat <- solve(a_mat);a_inv_mat
+
+```
+
+Para obtener finalmente
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+# (X^{t}X)^{-1}X{t}Y
+betas_mco <- a_inv_mat %*% t(x_mat) %*% y_vector ;betas_mco # Estimadores
+```
+
+Que por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+ols_caschool <- lm(testscr~ str + el_pct,data=caschool);ols_caschool
+```
+Cuya función ajustada finalmente es:
+
+\begin {equation*}
+\hat{testscr_{i}} = 686.0322 - 1.1013 str_{i} - 0.6498 elpct_{i}
+\end{equation*}
+
+\newpage
+
+# Medidas extras
+
+## Observaciones ajustadas
+
+Las observaciones ajustadas de forma matricial son (mostrando primeros 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+y_ajustados <- x_mat %*% betas_mco ; y_ajustados[1:5] #Y ajustada
+
+```
+
+Las observaciones ajustadas por linea de comando (mostrando primeras 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+fitted(ols_caschool)[1:5]
+```
+## Residuales
+
+Los residuales de forma matricial son (mostrando primeros 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+e1 <- y_vector - y_ajustados; e1[1:5] #Residuos
+
+```
+
+Los residuales por linea de comando son (mostrando primeros 5 observaciones):
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+e1_comando <- residuals(ols_caschool);e1_comando[1:5]
+```
+
+## Error Estándar de la regresión
+
+El error estándar de la regresión de forma matricial es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+ESR_r2 <-(t(e1) %*% e1) /(n_muestra - k_variables);
+ESR <- sqrt(ESR_r2); ESR
+```
+
+El error estándar de la regresión por linea de comando es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+summary_ols <- summary(ols_caschool);
+ESR_comando <- summary_ols$sigma;ESR_comando
+```
+
+\newpage
+
+## Suma de los residuos al cuadrado
+
+SRC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+SRC <- t(e1) %*% e1;SRC # Suma de residuos al cuadrado
+```
+
+## Suma explicada de cuadrados
+
+SEC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+SEC <- t(y_ajustados - mean(y_vector)) %*% (y_ajustados - mean(y_vector));SEC #Suma explicada de cuadrados
+```
+
+## Suma total de cuadrados
+
+STC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+STC <- t(y_vector - mean(y_vector)) %*% (y_vector - mean(y_vector));STC #Suma total de cuadrados
+```
+
+## Coeficiente de determinación
+
+De forma manual
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2 <- SEC/STC;R.2
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2comando <- summary_ols$r.squared;R.2comando
+
+```
+
+## Coeficiente de determinación ajustado
+
+De forma manual
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R2a <- 1-((n_muestra - 1)/(n_muestra - k_variables ))*(1 - R.2);R2a
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2acomando <- summary_ols$adj.r.squared;R.2acomando
+```
+
+\newpage
+
+# Inferencias a los parámetros obtenidos
+
+## Test de Shapiro-Wilk
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+#Si el valor p es menor o igual al nivel alfa se rechaza Ho es decir el estimador=0
+shapiro.test(ols_caschool$residuals)
+```
+
+## Test de Breusch-Pagan
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+#Si el valor p es menor o igual al nivel alfa se rechaza Ho es decir el estimador=0
+bptest(ols_caschool)
+```
+
+## Matrix de varianza-covarianza homocedástica
+
+De forma matricial la matrix de varianza-covarianza homocedástica es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vcov_matrix <- (ESR[1]^2) * a_inv_mat ;round(vcov_matrix,6)
+```
+
+Por linea la matrix de varianza-covarianza homocedástica es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vcov_matrix_homo <- vcov(ols_caschool) ;vcov_matrix_homo
+#vcov_matrix_hete <-  vcov(ols_caschool,type="HC1") ;vcov_matrix_hete matrix heterocedastica
+```
+
+\newpage
+
+## Significancia para el intercepto
+
+Sabemos que el parámetro estimado del intercepto es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vector_to_test <- as.matrix(c(1,0,0)); #Unico parametro para prueba de hipotesis
+valor_estimado <- t(vector_to_test) %*% betas_mco;valor_estimado
+```
+
+De forma matricial el error estándar es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_error_estandar <- sqrt(vcov_matrix[1,1]);t_error_estandar
+```
+
+Cuyo estadístico "T" es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_estadistico <- valor_estimado/t_error_estandar;t_estadistico
+
+```
+
+## Significancia para el coeficiente de str
+
+Sabemos que el parámetro estimado del coeficiente de la variabñe str es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vector_to_test <- as.matrix(c(0,1,0)); #Unico parametro para prueba de hipotesis
+valor_estimado <- t(vector_to_test) %*% betas_mco;valor_estimado
+```
+
+De forma matricial el error estándar es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_error_estandar <- sqrt(vcov_matrix[2,2]);t_error_estandar
+```
+
+Cuyo estadístico "T" es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_estadistico <- valor_estimado/t_error_estandar;t_estadistico
+
+```
+
+## Significancia para el coeficiente de el_pct
+
+Sabemos que el parámetro estimado del coeficiente de la variable el_pct es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vector_to_test <- as.matrix(c(0,0,1)); #Unico parametro para prueba de hipotesis
+valor_estimado <- t(vector_to_test) %*% betas_mco;valor_estimado
+```
+
+De forma matricial el error estándar es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_error_estandar <- sqrt(vcov_matrix[3,3]);t_error_estandar
+```
+
+Cuyo estadístico "T" es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_estadistico <- valor_estimado/t_error_estandar;t_estadistico
+
+```
+
+\newpage
+
+## Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+summary_ols
+```
