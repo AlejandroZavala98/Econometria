@@ -1,0 +1,340 @@
+---
+title: "Análisis para el conjunto de datos Growth"
+author: "Joel Alejandro Zavala Prieto"
+output: pdf_document
+toc: TRUE
+---
+
+\newpage
+
+# Información de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE , warning=FALSE}
+library(knitr) #Imprimir dataframes y tablas
+library(readxl) #Leer y escribir archivos en excel
+library(lmtest) #Test de coeficientes de parametros
+library(sandwich) #Varianza heterocedastica y homocedastica
+library(MASS) # Matriz de varianza - covarianza
+```
+
+\newpage
+
+# Modelando el dataset Growth
+
+## Descripción
+
+En esta parte se hara un análisis del conjunto de datos "Growth". Cuya descripción citare
+
+> "Contiene datos sobre las tasas de crecimiento promedio durante 1960-1995 para 65 países, junto con variables que están potencialmente relacionadas con el crecimiento. Estos datos fueron proporcionados por el profesor Ross Levine de la Universidad de Brown y fueron utilizados en su artículo con Thorsten Beck y Norman Loayza"
+
+## Visualización
+
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+rm(list=ls()) #Clean the environment
+
+Growth <- read_excel("C:/Users/Alejandro Zavala/Zavala_Programas/Bases/Growth.xls",
+                     col_names = TRUE)
+
+ols_growth <- lm(growth~tradeshare,data=Growth)
+# Plot rec 
+plot(Growth$tradeshare,Growth$growth, main="Crecimiento anual promedio", col='gold4', lwd=2, xlab="Participación del comercio", ylab="Crecimiento anual")
+abline(ols_growth, lwd = 3, col ="darkcyan")
+```
+
+# Coeficientes del modelo de regresión 
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+kable(ols_growth$coefficients)
+```
+
+\newpage
+
+## Modelo obtenido
+
+De tal modo el modelo es $$ \hat{growth_{i}} = 0.6402653 + 2.3064337tradeshare_{i}$$
+
+Si predecimos el crecimiento con participacion de 0.5 y 1 , y creamos un intervalo de confianza para la poredicción al nivel 90% se tiene que:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+newd <- data.frame(tradeshare=c(0.5,1))
+prediccion_crecimiento <- predict(ols_growth, newd, interval="prediction",level = 0.90)
+kable(prediccion_crecimiento)
+```
+
+# Inferencias a los parámetros obtenidos
+
+## Varianza Heterocedastica
+
+### Por funciones propias 
+
+Para $\hat{\beta_{0}}$, el estadístico t:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+#Heterocedastica
+e.2 <- residuals(ols_growth)^2 #Residuos al cuadrado
+n <- length(e.2) #Tamaño de la muestra
+
+#h.const <- mean(Growth$tradeshare)/(0.5 * sum(Growth$tradeshare^2));
+h.const <- mean(Growth$tradeshare)/(0.5 * sum(Growth$tradeshare^2));
+
+hat.h <- 1 - ( h.const * Growth$tradeshare );
+
+num_b0.het <- sum( (hat.h^2) * e.2)
+
+den_b0.het <- sum( (hat.h^2) )^2
+
+var.b0 <- (n/(n-2)) * (num_b0.het/den_b0.het);# #Varianza Estandar heterocedastica
+sd.b0 <- sqrt(var.b0);# Desviacion Estandar heterocedastica o error standar
+
+
+t_intercepto <- ols_growth$coef[1] / sd.b0 ;t_intercepto #Calcular estadistito T
+```
+
+Para $\hat{\beta_{1}}$, el estadístico t:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+#Heterocedastica
+desvio.x <- (Growth$tradeshare - mean(Growth$tradeshare))^2
+var.b1 <- (n/(n-2)) * (sum(desvio.x*e.2) / (sum(desvio.x))^2)
+sd.b1 <- sqrt(var.b1);# #Desviacion Estandar
+
+t_tradeshare <- ols_growth$coef[2] / sd.b1 ;t_tradeshare #Calcular estadistito T
+```
+
+Para $\hat{\beta_{1}}$, el su p-valor:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+p.value_beta1 <- 2*pnorm(-abs(t_tradeshare)); p.value_beta1
+```
+
+### Por linea de comando (inferencias)
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+coeftest(ols_growth,vcov = vcovHC,type = "HC1")
+```
+
+
+### Intervalo de confianza al nivel 95% por funciones propias
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+kable(cbind(inf = ols_growth$coef[2] - 1.96 * sd.b1,
+            sup = ols_growth$coef[2] + 1.96 * sd.b1))
+
+```
+
+### Intervalo de confianza al nivel 95% por linea de comando
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+coefci(ols_growth,vcov = vcovHC,type = "HC1")
+```
+
+\newpage
+
+## Varianza Homocedastica
+
+### Por funciones propias 
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+s2.e <- sum(e.2) / (n-2)
+b1.var_homo <- s2.e / (sum(desvio.x))
+b1.sd_homo <- sqrt(b1.var_homo)
+# 2.t Estadistico
+t.homo <- ols_growth$coef[2] / b1.sd_homo ; t.homo
+
+pvalhomo <- 2*pnorm(-abs(t.homo));pvalhomo
+```
+
+### Intervalo de confianza al nivel 95% por funciones propias
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+kable(cbind( inf = ols_growth$coef[2] - 1.96 * b1.sd_homo ,
+             sup = ols_growth$coef[2] + 1.96 * b1.sd_homo))
+
+```
+
+### Intervalo de confianza al nivel 95% por linea de comando
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+coefci(ols_growth)
+```
+
+\newpage
+
+## Medidas de ajuste
+
+Recordemos algunas medidas importantes, tales como:
+
+Suma total de cuadrados (STC)
+
+\begin{equation*}
+\begin{split}
+STC = \sum_{i=1}^{n} (y_{i} -\bar{y})^{2} 
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+stc_all <- sum((Growth$growth - mean(Growth$growth))^2); stc_all
+```
+
+Suma explicada de cuadrados (SEC)
+
+\begin{equation*}
+\begin{split}
+SEC = \sum_{i=1}^{n} (\hat{y_{i}} -\bar{y})^{2} 
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+growth.hat_all <- fitted(ols_growth) # Valores estimados
+sec_all <- sum((growth.hat_all - mean(Growth$growth))^2); sec_all
+```
+
+Suma de los residuos al cuadrado (SRC)
+
+\begin{equation*}
+SRC = \sum_{i=1}^{n} (y_{i} -\hat{y_{i}})^{2} 
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+e2_all <- Growth$growth - growth.hat_all # Residuos
+#e2_all <- residuals(ols_growth)
+src_all <- sum(e2_all^2); src_all
+```
+
+Tamaño de la muestra
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+n_all <- length (Growth$growth); n_all
+```
+
+$R^{2}$ o R cuadrado
+
+\begin{equation*}
+R^{2} = \frac{SEC}{STC}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+R2_all <- sec_all/stc_all; R2_all
+```
+
+
+Error estándar de la regresión
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+esr_all <- sqrt (src_all/(n_all-2)) ; esr_all # error estandar de la regresion
+```
+
+\newpage
+
+## Resumen general
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+summary(ols_growth)
+```
+
+\newpage
+
+# Excluyendo a Malta
+
+## Descripción 
+
+Se procedera hacer un análisis pero excluyendo Malta
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+df_noMalta <- subset(Growth, country_name != "Malta")
+
+ols_noMalta <- lm(growth~tradeshare,data=df_noMalta)
+# Plot rec 
+plot(df_noMalta$tradeshare,df_noMalta$growth, main="Crecimiento anual promedio (Sin Malta)", col='gold4', lwd=2, xlab="Participación del comercio", ylab="Crecimiento anual")
+abline(ols_noMalta, lwd = 3, col ="darkcyan")
+```
+
+## Modelo obtenido
+
+De tal modo el modelo es $$ \hat{growth_{i}} = 0.9574 + 1.6809 tradeshare_{i}$$
+
+Si predecimos el crecimiento con participacion de 0.5 y 1 , al nivel 90% se tiene que:
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+prediccion_noMalta <- predict(ols_noMalta, newd, interval="prediction",level = 0.90)
+kable(prediccion_noMalta)
+```
+
+\newpage
+
+## Medidas de ajuste
+
+Recordemos algunas medidas importantes, tales como:
+
+Suma total de cuadrados (STC)
+
+\begin{equation*}
+\begin{split}
+STC = \sum_{i=1}^{n} (y_{i} -\bar{y})^{2} 
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+stc_noMalta <- sum((df_noMalta$growth - mean(df_noMalta$growth))^2); stc_noMalta
+```
+
+Suma explicada de cuadrados (SEC)
+
+\begin{equation*}
+\begin{split}
+SEC = \sum_{i=1}^{n} (\hat{y_{i}} -\bar{y})^{2} 
+\end{split}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+growth.hat <- fitted(ols_noMalta) # Valores estimados
+sec_noMalta <- sum((growth.hat - mean(df_noMalta$growth))^2); sec_noMalta
+```
+
+Suma de los residuos al cuadrado (SRC)
+
+\begin{equation*}
+SRC = \sum_{i=1}^{n} (y_{i} -\hat{y_{i}})^{2} 
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+e2_noMalta <- residuals(ols_noMalta) # Residuos
+src_noMalta<- sum(e2_noMalta^2); src_noMalta
+```
+
+Tamaño de la muestra
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+n_noMalta <- length (df_noMalta$growth); n_noMalta
+```
+
+$R^{2}$ o R cuadrado
+
+\begin{equation*}
+R^{2} = \frac{SEC}{STC}
+\end{equation*}
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+R2_noMalta <- sec_noMalta/stc_noMalta;R2_noMalta
+```
+
+Error estándar de la regresión
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+esr_noMalta <- sqrt (src_noMalta/(n_noMalta-2)); esr_noMalta # error estandar de la regresion sin Malta
+```
+
+\newpage
+
+## Resumen general
+
+```{r, echo = FALSE, fig.height= 4.0, fig.width = 5.5, fig.align="center"}
+summary(ols_noMalta)
+```
