@@ -1,0 +1,176 @@
+---
+title: "Análisis para el dataset Growth (Parte 2)"
+author: "Joel Alejandro Zavala Prieto"
+output: pdf_document
+toc: TRUE
+---
+
+\newpage
+
+# Información de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE , warning = FALSE}
+library(ggplot2)
+library(reshape2)
+
+library(knitr) #Imprimir dataframes y tablas
+library(readxl) #Leer y escribir archivos en excel
+library(lmtest) #Test de coeficientes de parametros, prueba para Breusch-Pagan (homocedasticidad)
+library(sandwich) #Varianza heterocedastica y homocedastica
+library(MASS) # Matriz de varianza - covarianza
+library(nortest) # Pruebas como la de shapiro para normalidad de residuos
+
+rm(list=ls()) #Clean the environment
+```
+
+\newpage
+
+# Modelando el dataset
+
+## Descripción
+
+En esta parte se hara un análisis del conjunto de datos "Growth". Cuya descripción citare
+
+> "Contiene datos sobre las tasas de crecimiento promedio durante 1960-1995 para 65 países, junto con variables que están potencialmente relacionadas con el crecimiento. Estos datos fueron proporcionados por el profesor Ross Levine de la Universidad de Brown y fueron utilizados en su artículo con Thorsten Beck y Norman Loayza"
+
+## Descripción de las variables
+
+| Variable | Descripción |
+| -- | -- |
+| country_name | Nombre del pais |
+| growth | Crecimiento porcentual medio anual del Producto Interno Bruto (PIB) real de
+1960 hasta 1995|
+| rgdp60| El valor del PIB per cápita en 1960, convertido a dólares estadounidenses de 1960|
+| tradehare| La participación promedio del comercio en la economía de 1960 a 1995, medida como
+suma de las exportaciones más las importaciones, dividida por el PIB|
+| yearsshcool| Promedio de años de escolarización de adultos residentes en ese país en 1960|
+| rev_coups | Número medio anual de revoluciones, insurrecciones (exitosas o no) y golpes
+de estado en ese país desde 1960 hasta 1995|
+| assasinations| Promedio anual de asesinatos políticos en ese país desde 1960 hasta
+1995 (por millón de habitantes) |
+| oil| 1 si el petróleo representara al menos la mitad de las exportaciones en 1960 (0 en otro caso)|
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+Growth <- read_excel("C:/Users/Alejandro Zavala/Zavala_Programas/Bases/Growth.xls",
+                     col_names = TRUE)
+
+kable(head(Growth))
+```
+
+\newpage
+
+## Resumen rápido de las variables
+
+Un rápido vistazo a las medidas estadisticas de nuestro interés de las variables del dataset (excluyendo a Malta)
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+name_interes <-  c("growth","rgdp60","tradeshare","yearsschool","rev_coups","assasinations")
+df_noMalta <- subset(Growth, country_name != "Malta")
+df_noMalta <- df_noMalta[,name_interes]
+
+summary(df_noMalta["growth"])
+summary(df_noMalta["rgdp60"])
+summary(df_noMalta["tradeshare"])
+summary(df_noMalta["yearsschool"])
+summary(df_noMalta["rev_coups"])
+summary(df_noMalta["assasinations"])
+
+
+```
+
+## Propuesta de modelo
+
+\begin {equation*}
+\hat{growth}_{i} = \hat{\beta}_{0} + \hat{\beta}_{1}tradeshare_{i} + \hat{\beta}_{2}yearschool_{i} + \hat{\beta}_{3}revcoups_{i} + \hat{\beta}_{4}assasinations_{i} + \hat{\beta}_{5}rgdp60_{i}
+\end{equation*}
+
+Se muestra a continuación las variables a tomar para el analisis:
+
+Mostrando las primeras 10 observaciones
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+kable(head(Growth[,name_interes],10))
+```
+
+## Ajuste del modelo e inferencias a los coeficientes obtenidos
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+mco_growth_all <- lm(formula = growth ~ tradeshare + yearsschool + rev_coups + assasinations + rgdp60,
+data = df_noMalta);
+
+mco_multiple <- summary(mco_growth_all); mco_multiple
+```
+
+\begin {equation*}
+\hat{growth}_{i} = 0.62689 + 1.34081 tradeshare_{i} + 0.56424 yearschool_{i} - 2.15042 revcoups_{i} + 0.32258 assasinations_{i} - 0.00046 rgdp60_{i}
+\end{equation*}
+
+\newpage
+
+## Se pueden omitir variables del modelo obtenido
+
+Se vera si pueden ser omitidas las variables yearsschool, rev_coups, assasinations y rgdp60 con ayuda del estadistico F
+
+Sabemos que del modelo lineal (ya antes estudiado) se obtuvo que el modelo es:
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+mco_growth_simple <- lm(formula = growth ~ tradeshare, data = df_noMalta);
+
+mco_simple <- summary(mco_growth_simple);mco_simple
+```
+
+\begin {equation*}
+\hat{growth}_{i} = 0.9574 + 1.6809 tradeshare_{i}
+\end{equation*}
+
+Con un coeficiente de determinación de:
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+r2_simple <- mco_simple$r.squared; r2_simple
+```
+
+Mientras que el coeficiente de determinación del modelo múltiple es:
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+r2_multiple <- mco_multiple$r.squared; r2_multiple
+```
+
+Ahora el número de restricciones de nuestra hipotesis nula es 4, mientras que la regresion completa tiene 5, ademas de contar con un total de 64
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+q <- 4; #Numero de restricciones de la hipotesis nula
+k <- 5; #Regresores totales de la regresion completa;
+n <- length(df_noMalta$growth)
+
+```
+
+Ahora sabemos del estadistico que se usara
+
+\begin {equation*}
+F = \frac{ \frac{ SRC_{r} - SRC_{nr}}{q} }{ \frac{SRC_{nr}}{n - k - 1}  } = \frac{ \frac{ R^{2}_{nr} - R^{2}_{r}}{q} }{ \frac{1 - R^{2}_{nr}}{n - k - 1}  }
+\end{equation*}
+
+\newpage
+
+De tal forma que nuestro estadistico es:
+
+```{r, echo = FALSE, fig.height= 7.0, fig.width = 8.5, fig.align="center"}
+F_estadistico <- ( (r2_multiple - r2_simple)/  (q)) / ( (1 - r2_multiple)/ (n-k-1));F_estadistico
+
+```
+
+Por tablas 
+
+```{r}
+qf(0.01, q, n-k-1, lower.tail=F)
+qf(0.025, q, n-k-1, lower.tail=F)
+qf(0.05, q, n-k-1, lower.tail=F)
+
+```
+
