@@ -1,0 +1,393 @@
+---
+title: "Análisis para el dataset TeachingRatings"
+author: "Joel Alejandro Zavala Prieto"
+output: pdf_document
+toc: TRUE
+---
+
+\newpage
+
+# Información de contacto
+
+Mail: alejandro.zavala1001@gmail.com
+
+Facebook: https://www.facebook.com/AlejandroZavala1001
+
+Git: https://github.com/AlejandroZavala98
+
+```{r, echo = FALSE , warning = FALSE}
+library(knitr) #Imprimir dataframes y tablas
+library(readxl) #Leer y escribir archivos en excel
+library(lmtest) #Test de coeficientes de parametros, prueba para Breusch-Pagan (homocedasticidad)
+library(sandwich) #Varianza heterocedastica y homocedastica
+library(MASS) # Matriz de varianza - covarianza
+library(nortest) # Pruebas como la de shapiro para normalidad de residuos
+
+rm(list=ls()) #Clean the environment
+```
+
+\newpage
+
+# Modelando el dataset TeachingRatings
+
+## Descripción
+
+En esta parte se hara un análisis del conjunto de datos "TeachingRatings". Cuya descripción citare
+
+> "Contiene datos sobre evaluaciones del curso, características del curso y profesor
+características de 463 cursos para los años académicos 2000-2002 en la Universidad de Texas en
+Austin. Estos datos fueron proporcionados por el profesor Daniel Hamermesh de la Universidad de Texas en Austin y se utilizaron en su artículo con Amy Parker, "Beauty in the Classroom: Instructors" Pulcritud y productividad pedagógica putativa ”. Revisión de la economía de la educación, agosto 2005, vol. 24, núm. 4, págs. 369-376. "
+
+Viendo variables que contiene este dataset
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+load("C:/Users/Alejandro Zavala/Zavala_Programas/Bases/TeachingRatings.RData")
+
+names(TeachingRatings)
+#kable(description) #Error con descripcion
+```
+
+Ademas la descripción de las variables que integran el dataset son:
+
+| Variable | Descripción | 
+| -- | -- | 
+| course_eval| Puntaje de evaluación docente “general del curso”, en una escala de 1 (muy insatisfactorio) a 5 (excelente) |
+| beauty| Calificación de la apariencia física del instructor por un panel de seis estudiantes, promediado entre los seis panelistas, se desplazaron para tener una media de cero. |
+| female| 1 Si el instructor es mujer, 0 si el instructor es hombre|
+| minority| 1 Si el instructor es no-Blanco, 0 si el instructor es blanco|
+| nnenglish| 1 Si el instructor no es hablante nativo de inglés, 0 si el instructor es hablante nativo de inglés|
+| intro| 1 si el curso es introductorio (principalmente cursos grandes para estudiantes de primer y segundo año), 0 Si el curso no es introductorio |
+| onecredit| 1 Si el curso es optativo de un solo crédito (yoga, aeróbicos, danza, etc.) , 0 en otro caso|
+| age| Edad del profesor|
+
+Fuente: https://wps.pearsoned.com/aw_stock_ie_3/178/45691/11696965.cw/index.html
+
+\newpage
+
+# Propuesta de modelo
+
+Se propone el modelo
+
+\begin {equation*}
+courseeval_{i} = \beta_{0} + \beta_{1}beauty_{i} + \beta_{2}intro_{i} + \beta_{3}onecredit_{i} + \beta_{4}female_{i} + \beta_{5}minority_{i} + \beta_{6}nnenglish_{i} + \epsilon_{i}
+\end{equation*}
+
+Cuya función ajustada es:
+
+\begin {equation*}
+\begin{split}
+\hat{courseeval}_{i} = \hat{\beta}_{0} + \hat{\beta}_{1} beauty_{i} + \hat{\beta}_{2} intro_{i} + \hat{\beta}_{3} onecredit_{i} + \hat{\beta}_{4} female_{i} + \hat{\beta}_{5}minority_{i} + \hat{\beta}_{6} nnenglish_{i}
+\end{split}
+\end{equation*}
+
+## Visualización
+
+Se muestra a continuación las variables a tomar para el análisis (mostrando primeras 25 observaciones)
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+variables_interes <- c("course_eval",
+                       "beauty",
+                       "intro",
+                       "onecredit",
+                       "female",
+                       "minority",
+                       "nnenglish");
+
+kable( head(TeachingRatings[,variables_interes] , 25) )
+```
+
+\newpage
+
+# Ajuste por forma matricial
+
+Se sabe que de forma matricial se tiene $$ Y = X \beta$$
+El tamaño de la muestra es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vector_Y <- as.matrix(TeachingRatings$course_eval); # VARIABLE DEPENDIENTE Y
+n <- length(vector_Y);n
+```
+
+La matrix $X^{t}X$
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+#Estimacion de mco La matrix X^{t}X
+
+#Recordando Y = XB
+
+matrix_X <- matrix(c(rep(1,n),
+                     TeachingRatings$beauty,
+                     TeachingRatings$intro,
+                     TeachingRatings$onecredit,
+                     TeachingRatings$female,
+                     TeachingRatings$minority,
+                     TeachingRatings$nnenglish),nrow = n);
+
+k_variables <- ncol(matrix_X);
+
+matrix_xt_x <- t(matrix_X) %*% matrix_X;round(matrix_xt_x,6)
+```
+
+La matrix $(X^{t}X)^{-1}$
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+matrix_A <- solve(matrix_xt_x);round(matrix_A,6) # A = (X^{t} X)^{-1} La matrix 
+```
+
+\newpage
+
+Para obtener finalmente la matrix $(X^{t} X)^{-1} X^{t} Y$
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+mco_betas <- matrix_A %*% t(matrix_X) %*% vector_Y ;mco_betas # A X^{t} Y
+```
+
+Que por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+mco_teachingRatings <- lm(course_eval ~ beauty + intro + onecredit + female + minority + nnenglish,data = TeachingRatings);mco_teachingRatings
+```
+
+## Modelo ajustado
+
+De tal forma el modelo ajustado es: 
+
+\begin {equation*}
+\begin{split}
+\hat{courseeval}_{i} = 4.06829 + 0.16561 beauty_{i} + 0.01133 intro_{i} + 0.63453 onecredit_{i} - 0.17348 female_{i}  \\ 
+- 0.16662minority_{i} - 0.24416 nnenglish_{i}
+\end{split}
+\end{equation*}
+
+\newpage
+
+# Medidas extras
+
+## Observaciones ajustadas
+
+Las observaciones ajustadas de forma matricial son (mostrando primeros 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+Y.e <- matrix_X %*% mco_betas ; Y.e[1:5] # Y ajustada = X Betas_{estimadas}
+
+```
+
+Las observaciones ajustadas por linea de comando (mostrando primeras 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+fitted(mco_teachingRatings)[1:5]
+```
+
+## Residuales
+
+Los residuales de forma matricial son (mostrando primeros 5 observaciones): 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+e1 <- vector_Y - Y.e;e1[1:5] #Residuos
+
+```
+
+Los residuales por linea de comando son (mostrando primeros 5 observaciones):
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+e1_comando <- residuals(mco_teachingRatings);e1_comando[1:5]
+```
+
+## Error estándar de la regresión
+
+El error estándar de la regresión de forma matricial es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+ER <-  ( t(e1) %*% e1) /(n-k_variables);
+ESR <- sqrt(ER); ESR
+```
+
+El error estándar de la regresión por linea de comando es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+summary_ols <- summary(mco_teachingRatings);
+ESR_comando <- summary_ols$sigma;ESR_comando
+```
+
+\newpage
+
+## Suma de los residuos al cuadrado
+
+SRC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+SRC <- t(e1) %*% e1;SRC # Suma de residuos al cuadrado
+```
+
+## Suma explicada de cuadrados
+
+SEC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+SEC <- t(Y.e - mean(vector_Y)) %*% (Y.e - mean(vector_Y));SEC #Suma explicada de cuadrados
+```
+
+## Suma total de cuadrados
+
+STC
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+STC <- t(vector_Y - mean(vector_Y)) %*% (vector_Y - mean(vector_Y));STC #Suma total de cuadrados
+```
+
+## Coeficiente de determinación
+
+De forma manual
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2 <- SEC/STC;R.2
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2comando <- summary_ols$r.squared;R.2comando
+
+```
+
+## Coeficiente de determinación ajustado
+
+De forma manual
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R2a <- 1-((n - 1)/(n - k_variables))*(1 - R.2);R2a
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+R.2acomando <- summary_ols$adj.r.squared;R.2acomando
+```
+
+\newpage
+
+# Inferencias a los parámetros obtenidos
+
+## Test de Shapiro-Wilk
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+shapiro.test(mco_teachingRatings$residuals)
+```
+
+## Test de Breusch-Pagan
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+bptest(mco_teachingRatings)
+```
+
+\newpage
+
+## Matrix de varianza-covarianza homocedástica
+
+De forma manual
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vcov_matrix <- (ESR[1]^2) * matrix_A ;round(vcov_matrix,6)
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vcov_matrix_comando <- vcov(mco_teachingRatings);round(vcov_matrix_comando,6)
+```
+\newpage
+
+## ¿Es significante el coeficiente de la variable intro?
+
+### Error estándar para la variable intro
+
+Se calculo que el estimado del coeficiente de la variable intro es: 
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+vector_to_test <- as.matrix(c(0,0,1,0,0,0,0)); #Unico parametro para prueba de hipotesis
+t(vector_to_test ) %*% mco_betas
+
+```
+
+De forma matricial el error estándar es:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+t_intro_sd <- sqrt(vcov_matrix[3,3]);t_intro_sd
+```
+
+### Prueba de hipótesis de significancia 
+
+Obteniendo estadístico t para el coeficiente de la variable intro de forma matricial
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+u_estimado_real <- t(vector_to_test ) %*% mco_betas;
+sd_intro <- ESR * ( sqrt(t(vector_to_test) %*% matrix_A %*% vector_to_test) );
+t_intro <- u_estimado_real/ sd_intro; t_intro
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+coeftest(mco_teachingRatings)
+#Si el valor p es menor o igual al nivel alfa se rechaza Ho es decir el estimador=0
+```
+
+### Intervalo de confianza al nivel 95% 
+
+Obteniendo un intervalo de confianza al 95% para el coeficiente de la variable intro de forma matricial
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+
+cbind(u_estimado_real - 1.96*sd_intro,u_estimado_real + 1.96*sd_intro)
+```
+
+Por linea de comando
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+coefci(mco_teachingRatings)
+```
+
+\newpage
+
+# Predicción con intervalos de confianza al 90%
+
+Se quiere hacer una predicción para los siguientes estándares al 90%
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+new_beauty <- c(0.25,0.40,0.65,0.80)
+new_intro <- c(0,1,1,1)
+new_onecredit <- c(1,1,0,0)
+new_female <-c(1,1,1,1)
+new_minority <-c(1,1,1,1)
+new_nnenglish <-c(1,1,1,0)
+n_predict <- length(new_beauty)
+
+new_pred <- data.frame(beauty = new_beauty,
+                       intro = new_intro,
+                       onecredit = new_onecredit,
+                       female = new_female,
+                       minority = new_minority,
+                       nnenglish = new_nnenglish)
+kable(new_pred)
+```
+
+De forma matricial:
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+new_pred_matrix <- matrix(c(rep(1,n_predict),
+                            new_beauty,
+                            new_intro,
+                            new_onecredit,
+                            new_female,
+                            new_minority,
+                            new_nnenglish),nrow = n_predict);
+
+vector_predict <- new_pred_matrix %*% mco_betas;vector_predict
+```
+
+Que por linea de comando a un nivel del 90%
+
+```{r, echo = FALSE, fig.height= 6.0, fig.width = 8.5, fig.align="center"}
+kable(predict(mco_teachingRatings, new_pred, interval="prediction" ,level = 0.90))
+```
+
